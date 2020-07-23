@@ -70,7 +70,6 @@ void setup() {
     };
 
     // Place to write our data.
-    // Place to write our data.
     memory_stream_t stream;
     stream.length = 0;
     stream.current_position = 0;
