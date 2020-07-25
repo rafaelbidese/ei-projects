@@ -8,9 +8,13 @@ Here I used the advices from the documentation to use the example on a device th
 
 I have tested the code on an ESP32-CAM using the Arduino environment and further I intend to use to this setup to capture image and post it to the ingestion API.
 
-So far, I can encode regular the standard message to CBOR. Next steps are possibly:
+So far, I can:
 
+* Encode regular the standard message to CBOR
 * Post standard data to the Ingestion API
+
+Next steps are:
+
 * Encode image and send it to the Ingestion API
 
 [Further Edge Impulse Documentation](https://docs.edgeimpulse.com/reference#c-sdk-usage-guide)
