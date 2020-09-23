@@ -21,11 +21,14 @@
  */
 
 // replace these accordingly
-#define API_PATH  "http://ingestion.edgeimpulse.com/api/training/data"
-#define API_KEY   "YOUR_API_KEY"
-#define HMAC_KEY  "YOUR_HMAC_KEY"
-#define SSID_NET  "FloripaNet2G"
-#define PASSWORD  "meninoslindos"
+#define API_PATH      "http://ingestion.edgeimpulse.com/api/training/data"
+#define API_KEY       "YOUR_API_KEY"
+#define HMAC_KEY      "YOUR_HMAC_KEY"
+#define SSID_NET      "SSID"
+#define PASSWORD      "PASSWORD"
+
+#define SAMPLE_TIME   10 // seconds
+#define SAMPLE_RATE   100 // Hz
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,9 +45,21 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 
+void getAccelData(float *x,  float *y,  float *z ){
+    
+    float values[][3] = {
+        { -9.81, 0.03, 1.21 },
+        { -9.83, 0.04, 1.28 },
+        { -9.12, 0.03, 1.23 },
+        { -9.14, 0.01, 1.25 }
+    };
 
-
-
+    int i = random(sizeof(values) / sizeof(values[0]));
+    
+    *x = values[i][0];
+    *y = values[i][1];
+    *z = values[i][2];  
+}
 
 void setup() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
@@ -84,7 +99,7 @@ void setup() {
         // Device type (required), use the same device type for similar devices
         "DISCO-L475VG-IOT01A",
         // How often new data is sampled in ms. (100Hz = every 10 ms.)
-        10,
+        1/SAMPLE_TIME,
         // The axes which you'll use. The units field needs to comply to SenML units (see https://www.iana.org/assignments/senml/senml.xhtml)
         { { "accX", "m/s2" }, { "accY", "m/s2" }, { "accZ", "m/s2" } }
     };
@@ -103,13 +118,30 @@ void setup() {
         while(1);
     }
 
+
     // Periodically call `sensor_aq_add_data` (every 10 ms. in this example) to append data
-    float values[][3] = {
-        { -9.81, 0.03, 1.21 },
-        { -9.83, 0.04, 1.28 },
-        { -9.12, 0.03, 1.23 },
-        { -9.14, 0.01, 1.25 }
-    };
+    float values[SAMPLE_TIME * SAMPLE_RATE][3] = { 0 }; // 100Hz * 10 seconds
+    uint16_t values_ix = 0;
+    
+    while(values_ix < 1000){
+        uint64_t next_tick = micros() + SAMPLE_RATE * 1000;
+        
+        float x, y, z;
+//        M5.IMU.getAccelData(&x, &y, &z);
+        getAccelData(&x, &y, &z);
+        
+        values[values_ix][0] = x;
+        values[values_ix][1] = y;
+        values[values_ix][2] = z;
+
+        values_ix++;
+
+        while (micros() < next_tick) {
+            /* blocking loop */
+        }
+    }
+
+
     for (size_t ix = 0; ix < sizeof(values) / sizeof(values[0]); ix++) {
         res = sensor_aq_add_data(&ctx, values[ix], 3);
         if (res != AQ_OK) {
